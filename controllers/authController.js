@@ -20,11 +20,12 @@ class AuthController {
     const data = await AuthService.register(email, password, name, phone);
     
     res.status(201).json({
-      success: true,
+      
       data: {
         user: data.user,
         profile: data.profile,
-        session: data.session
+        session: data.session,
+        success: true,
       }
     });
   });
