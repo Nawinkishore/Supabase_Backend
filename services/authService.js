@@ -51,7 +51,24 @@ class AuthService {
       profile
     };
   }
+  static async confirmEmailVerification(accessToken) {
+    const { data, error } = await supabase.auth.getUser(accessToken);
+    if (error) throw error;
 
+    // Update profile to mark email as verified
+    const { data: profileData, error: profileError } = await supabase
+      .from('profiles')
+      .update({ email_verified: true })
+      .eq('id', data.user.id)
+      .select();
+
+    if (profileError) throw profileError;
+
+    return {
+      ...data,
+      profile: profileData[0]
+    };
+  }
   // Get user profile
   static async getUserProfile(userId) {
     const { data, error } = await supabase

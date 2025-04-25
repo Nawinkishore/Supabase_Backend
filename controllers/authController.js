@@ -67,6 +67,25 @@ class AuthController {
     });
   });
 
+  static confirmEmailVerification = asyncHandler(async (req, res) => {
+    const { access_token } = req.body;
+
+    if (!access_token) {
+      return res.status(400).json({
+        success: false,
+        error: 'Access token is required'
+      });
+    }
+
+    const data = await AuthService.confirmEmailVerification(access_token);
+    
+    res.status(200).json({
+      success: true,
+      message: 'Email verified successfully',
+      data
+    });
+  })
+
   /**
    * @desc    Get current user
    * @route   GET /api/auth/me
