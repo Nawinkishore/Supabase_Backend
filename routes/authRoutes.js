@@ -7,7 +7,7 @@ const router = express.Router();
 // Public routes
 router.post('/register', AuthController.register);
 router.post('/login', AuthController.login);
-router.post('/verify-email', AuthController.confirmEmailVerification);
+router.post('/verify-email', AuthController.verifyEmail);
 router.post('/refresh-token', AuthController.refreshToken);
 router.post('/request-password-reset', AuthController.requestPasswordReset);
 router.post('/reset-password', AuthController.handlePasswordReset);

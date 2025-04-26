@@ -17,17 +17,78 @@ class AuthController {
       });
     }
 
-    const data = await AuthService.register(email, password, name, phone);
-    
-    res.status(201).json({
-      
-      data: {
-        user: data.user,
-        profile: data.profile,
-        session: data.session,
+    try {
+      // Register user with Supabase (this will automatically send verification email)
+      const { data, error } = await AuthService.register({
+        email,
+        password,
+        options: {
+          data: { name, phone },
+          emailRedirectTo: `${process.env.FRONTEND_URL}/verify-email`
+        }
+      });
+
+      if (error) throw error;
+
+      // Create profile in your profiles table
+      const profile = await AuthService.getUserProfile(data.user.id);
+
+      res.status(201).json({
         success: true,
-      }
-    });
+        message: 'Registration successful! Please check your email for verification',
+        data: {
+          user: data.user,
+          profile
+        }
+      });
+    } catch (error) {
+      res.status(400).json({
+        success: false,
+        error: error.message
+      });
+    }
+  });
+  static verifyEmail = asyncHandler(async (req, res) => {
+    const { token } = req.params;
+
+    if (!token) {
+      return res.status(400).json({
+        success: false,
+        error: 'Verification token is required'
+      });
+    }
+
+    try {
+      // Verify the token with Supabase
+      const { data, error } = await supabase.auth.verifyOtp({
+        type: 'email',
+        token_hash: token
+      });
+
+      if (error) throw error;
+
+      // Update profile to mark email as verified
+      const updatedProfile = await supabase
+        .from('profiles')
+        .update({ email_verified: true })
+        .eq('id', data.user.id)
+        .select()
+        .single();
+
+      res.status(200).json({
+        success: true,
+        message: 'Email verified successfully',
+        data: {
+          user: data.user,
+          profile: updatedProfile.data
+        }
+      });
+    } catch (error) {
+      res.status(400).json({
+        success: false,
+        error: error.message || 'Email verification failed'
+      });
+    }
   });
 
   /**
@@ -67,24 +128,24 @@ class AuthController {
     });
   });
 
-  static confirmEmailVerification = asyncHandler(async (req, res) => {
-    const { access_token } = req.body;
+  // static confirmEmailVerification = asyncHandler(async (req, res) => {
+  //   const { access_token } = req.body;
 
-    if (!access_token) {
-      return res.status(400).json({
-        success: false,
-        error: 'Access token is required'
-      });
-    }
+  //   if (!access_token) {
+  //     return res.status(400).json({
+  //       success: false,
+  //       error: 'Access token is required'
+  //     });
+  //   }
 
-    const data = await AuthService.confirmEmailVerification(access_token);
+  //   const data = await AuthService.confirmEmailVerification(access_token);
     
-    res.status(200).json({
-      success: true,
-      message: 'Email verified successfully',
-      data
-    });
-  })
+  //   res.status(200).json({
+  //     success: true,
+  //     message: 'Email verified successfully',
+  //     data
+  //   });
+  // })
 
   /**
    * @desc    Get current user
